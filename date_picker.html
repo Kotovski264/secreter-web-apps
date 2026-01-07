@@ -1,15 +1,10 @@
-<!--
-static/date_picker.html
-HTML-страница для выбора даты в Telegram Web App.
-Отображает календарь, позволяет выбрать дату и отправить её обратно в бот.
--->
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Выбор даты</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * {
             margin: 0;
@@ -19,43 +14,46 @@ HTML-страница для выбора даты в Telegram Web App.
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #ffffff;
-            color: #000000;
+            background: #ffffff; /* fallback */
+            color: #000000; /* fallback */
             padding: 20px;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
         }
 
         .container {
             width: 100%;
-            max-width: 350px;
+            max-width: 400px;
         }
 
         h1 {
             text-align: center;
             margin-bottom: 20px;
             font-size: 24px;
+            color: #000000; /* fallback */
         }
 
         .calendar {
-            background: #f8f9fa;
+            background: #f0f0f0; /* fallback для secondary-bg */
             border-radius: 12px;
             padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
         }
 
-        .header {
+        .calendar-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .month-year {
             font-size: 18px;
             font-weight: 600;
+            color: #000000; /* fallback */
         }
 
         .nav-btn {
@@ -70,10 +68,12 @@ HTML-страница для выбора даты в Telegram Web App.
             display: flex;
             align-items: center;
             justify-content: center;
+            color: #000000; /* fallback */
+            transition: background 0.2s;
         }
 
         .nav-btn:hover {
-            background: #e9ecef;
+            background: #e0e0e0; /* fallback для hint */
         }
 
         .weekdays {
@@ -85,82 +85,75 @@ HTML-страница для выбора даты в Telegram Web App.
 
         .weekday {
             text-align: center;
-            font-size: 12px;
-            font-weight: 600;
-            color: #6c757d;
-            padding: 5px;
+            font-size: 14px;
+            color: #888888; /* fallback для hint */
+            font-weight: 500;
         }
 
-        .days {
+        .days-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
             gap: 5px;
         }
 
         .day {
-            width: 35px;
-            height: 35px;
-            border: none;
-            border-radius: 50%;
-            background: none;
-            font-size: 14px;
-            cursor: pointer;
+            aspect-ratio: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s;
-        }
-
-        .day:hover:not(.disabled) {
-            background: #e9ecef;
-        }
-
-        .day.today {
-            background: #007bff;
-            color: white;
-        }
-
-        .day.selected {
-            background: #28a745;
-            color: white;
-        }
-
-        .day.disabled {
-            color: #adb5bd;
-            cursor: not-allowed;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 50%;
+            transition: background 0.2s, color 0.2s;
+            color: #000000; /* fallback */
         }
 
         .day.other-month {
-            color: #dee2e6;
+            color: #888888; /* fallback */
+            pointer-events: none;
         }
 
-        .selected-date {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 16px;
-            min-height: 20px;
+        .day.today {
+            background: #e0e0e0; /* fallback */
         }
 
-        .confirm-btn {
+        .day.selected {
+            background: #007aff; /* fallback для button */
+            color: #ffffff; /* fallback для button-text */
+        }
+
+        .day:hover:not(.other-month):not(.selected) {
+            background: #e0e0e0; /* fallback */
+        }
+
+        #confirmBtn {
             width: 100%;
-            padding: 12px;
-            background: #007bff;
-            color: white;
+            padding: 15px;
+            background: #007aff; /* fallback */
+            color: #ffffff; /* fallback */
             border: none;
             border-radius: 8px;
             font-size: 16px;
             cursor: pointer;
-            margin-top: 20px;
             transition: opacity 0.2s;
+            margin-top: 10px;
         }
 
-        .confirm-btn:hover:not(:disabled) {
-            opacity: 0.9;
-        }
-
-        .confirm-btn:disabled {
+        #confirmBtn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+        }
+
+        #selectedDate {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 16px;
+            color: #000000; /* fallback */
+        }
+
+        .holiday {
+            color: #007aff; /* fallback */
+            font-weight: bold;
         }
     </style>
 </head>
@@ -168,10 +161,10 @@ HTML-страница для выбора даты в Telegram Web App.
     <div class="container">
         <h1>Выберите дату</h1>
         <div class="calendar">
-            <div class="header">
-                <button id="prevMonth" class="nav-btn">&lt;</button>
-                <div id="monthYear" class="month-year"></div>
-                <button id="nextMonth" class="nav-btn">&gt;</button>
+            <div class="calendar-header">
+                <button class="nav-btn" id="prevMonth">&lt;</button>
+                <span class="month-year" id="monthYear"></span>
+                <button class="nav-btn" id="nextMonth">&gt;</button>
             </div>
             <div class="weekdays">
                 <div class="weekday">Пн</div>
@@ -182,122 +175,145 @@ HTML-страница для выбора даты в Telegram Web App.
                 <div class="weekday">Сб</div>
                 <div class="weekday">Вс</div>
             </div>
-            <div id="days" class="days"></div>
+            <div class="days-grid" id="daysGrid"></div>
         </div>
-        <div id="selectedDate" class="selected-date"></div>
-        <button id="confirmBtn" class="confirm-btn" disabled>Подтвердить</button>
+        <div id="selectedDate">Выбрано: не выбрано</div>
+        <button id="confirmBtn" disabled>Подтвердить</button>
     </div>
 
-<script>
-    // Ждём загрузки DOM перед выполнением скрипта
-    document.addEventListener('DOMContentLoaded', () => {
-        // Инициализация Telegram Web App
+    <script>
         const tg = window.Telegram.WebApp;
-        tg.ready(); // Сообщаем Telegram, что Web App готова
-        tg.expand(); // Разворачиваем Web App на весь экран
+        tg.ready();
+        tg.expand();
 
-        // Переменные для текущего месяца и выбранной даты
+        // Применяем тему Telegram, если доступна
+        if (tg.themeParams) {
+            const tp = tg.themeParams;
+            document.body.style.backgroundColor = tp.bg_color || '#ffffff';
+            document.body.style.color = tp.text_color || '#000000';
+
+            document.querySelector('h1').style.color = tp.text_color || '#000000';
+            document.querySelector('.month-year').style.color = tp.text_color || '#000000';
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.style.color = tp.text_color || '#000000');
+            document.querySelectorAll('.day').forEach(day => day.style.color = tp.text_color || '#000000');
+            document.querySelector('#selectedDate').style.color = tp.text_color || '#000000';
+
+            const secondaryBg = tp.secondary_bg_color || '#f0f0f0';
+            document.querySelector('.calendar').style.backgroundColor = secondaryBg;
+
+            const hint = tp.hint_color || '#888888';
+            document.querySelectorAll('.weekday').forEach(w => w.style.color = hint);
+            document.querySelectorAll('.day.other-month').forEach(d => d.style.color = hint);
+            document.querySelectorAll('.day.today').forEach(d => d.style.backgroundColor = hint + '40'); // полупрозрачный
+            document.querySelectorAll('.day:hover:not(.other-month):not(.selected)').forEach(d => d.style.backgroundColor = hint + '40');
+
+            const buttonBg = tp.button_color || '#007aff';
+            const buttonText = tp.button_text_color || '#ffffff';
+            document.querySelector('#confirmBtn').style.backgroundColor = buttonBg;
+            document.querySelector('#confirmBtn').style.color = buttonText;
+            document.querySelectorAll('.day.selected').forEach(d => {
+                d.style.backgroundColor = buttonBg;
+                d.style.color = buttonText;
+            });
+            document.querySelectorAll('.holiday').forEach(h => h.style.color = buttonBg);
+        }
+
+        const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+
         let currentDate = new Date();
         let selectedDate = null;
 
-        // Названия месяцев на русском
-        const monthNames = [
-            'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-            'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
-        ];
+        const monthYear = document.getElementById('monthYear');
+        const daysGrid = document.getElementById('daysGrid');
+        const selectedDateEl = document.getElementById('selectedDate');
+        const confirmBtn = document.getElementById('confirmBtn');
+        const prevMonth = document.getElementById('prevMonth');
+        const nextMonth = document.getElementById('nextMonth');
 
-        // Функция для отрисовки календаря
+        const holidays = {
+            '1-1': 'Новый год',
+            '1-2': 'Новогодние каникулы',
+            '1-3': 'Новогодние каникулы',
+            '1-4': 'Новогодние каникулы',
+            '1-5': 'Новогодние каникулы',
+            '1-6': 'Новогодние каникулы',
+            '1-7': 'Рождество Христово',
+            '1-8': 'Новогодние каникулы',
+            '2-23': 'День защитника Отечества',
+            '3-8': 'Международный женский день',
+            '5-1': 'Праздник Весны и Труда',
+            '5-9': 'День Победы',
+            '6-12': 'День России',
+            '11-4': 'День народного единства'
+        };
+
         function renderCalendar() {
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
 
-            // Обновляем заголовок с месяцем и годом
-            document.getElementById('monthYear').textContent =
-                `${monthNames[month]} ${year}`;
+            monthYear.textContent = `${monthNames[month]} ${year}`;
+            daysGrid.innerHTML = '';
 
-            // Вычисляем первый и последний день месяца
-            const firstDay = new Date(year, month, 1);
-            const lastDay = new Date(year, month + 1, 0);
-            const daysInMonth = lastDay.getDate();
-            const startingDayOfWeek = (firstDay.getDay() + 6) % 7; // Понедельник = 0
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const daysInPrevMonth = new Date(year, month, 0).getDate();
 
-            const daysContainer = document.getElementById('days');
-            daysContainer.innerHTML = '';
-
-            // Добавляем дни предыдущего месяца (для заполнения сетки)
-            const prevMonthLastDay = new Date(year, month, 0).getDate();
-            for (let i = startingDayOfWeek - 1; i >= 0; i--) {
-                const day = prevMonthLastDay - i;
-                const button = document.createElement('button');
-                button.className = 'day other-month';
-                button.textContent = day;
-                button.disabled = true;
-                daysContainer.appendChild(button);
-            }
-
-            // Добавляем дни текущего месяца
             const today = new Date();
-            today.setHours(0,0,0,0); // для корректного сравнения
+            const isCurrentMonth = year === today.getFullYear() && month === today.getMonth();
 
+            let startDay = firstDay === 0 ? 6 : firstDay - 1;
+
+            // Предыдущий месяц
+            for (let i = startDay - 1; i >= 0; i--) {
+                const dayEl = document.createElement('div');
+                dayEl.classList.add('day', 'other-month');
+                dayEl.textContent = daysInPrevMonth - i;
+                daysGrid.appendChild(dayEl);
+            }
+
+            // Текущий месяц
             for (let day = 1; day <= daysInMonth; day++) {
-                const button = document.createElement('button');
-                button.className = 'day';
-                button.textContent = day;
+                const dayEl = document.createElement('div');
+                dayEl.classList.add('day');
+                dayEl.textContent = day;
+                dayEl.dataset.date = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
-                const date = new Date(year, month, day);
-                date.setHours(0,0,0,0);
-
-                const isToday = date.getTime() === today.getTime();
-                const isPast = date < today;
-
-                if (isToday) {
-                    button.classList.add('today'); // Выделяем сегодняшний день
+                const holidayKey = `${month + 1}-${day}`;
+                if (holidays[holidayKey]) {
+                    dayEl.classList.add('holiday');
+                    dayEl.title = holidays[holidayKey];
                 }
 
-                if (isPast) {
-                    button.classList.add('disabled');
-                    button.disabled = true; // Прошлые дни не кликабельны
-                } else {
-                    button.addEventListener('click', () => selectDate(year, month, day));
+                if (isCurrentMonth && day === today.getDate()) {
+                    dayEl.classList.add('today');
                 }
 
-                if (selectedDate && selectedDate.getTime() === date.getTime()) {
-                    button.classList.add('selected'); // Выделяем выбранную дату
+                if (selectedDate && selectedDate.getFullYear() === year && selectedDate.getMonth() === month && selectedDate.getDate() === day) {
+                    dayEl.classList.add('selected');
                 }
 
-                daysContainer.appendChild(button);
+                dayEl.addEventListener('click', () => selectDate(year, month, day));
+                daysGrid.appendChild(dayEl);
             }
 
-            // Добавляем дни следующего месяца (для заполнения сетки)
-            const totalCells = startingDayOfWeek + daysInMonth;
-            const remainingCells = Math.ceil(totalCells / 7) * 7 - totalCells;
-            for (let day = 1; day <= remainingCells; day++) {
-                const button = document.createElement('button');
-                button.className = 'day other-month';
-                button.textContent = day;
-                button.disabled = true;
-                daysContainer.appendChild(button);
-            }
-
-            // Обновляем текст выбранной даты и состояние кнопки подтверждения
-            if (selectedDate) {
-                document.getElementById('selectedDate').textContent =
-                    `Выбрано: ${formatDateDisplay(selectedDate)}`;
-                document.getElementById('confirmBtn').disabled = false;
-            } else {
-                document.getElementById('selectedDate').textContent = '';
-                document.getElementById('confirmBtn').disabled = true;
+            // Следующий месяц
+            const remainingDays = 42 - (startDay + daysInMonth);
+            for (let day = 1; day <= remainingDays; day++) {
+                const dayEl = document.createElement('div');
+                dayEl.classList.add('day', 'other-month');
+                dayEl.textContent = day;
+                daysGrid.appendChild(dayEl);
             }
         }
 
-        // Функция выбора даты при клике на день
         function selectDate(year, month, day) {
             selectedDate = new Date(year, month, day);
-            selectedDate.setHours(0,0,0,0); // Сбрасываем время для точного сравнения
-            renderCalendar(); // Перерисовываем календарь с выделением выбранной даты
+            selectedDate.setHours(0, 0, 0, 0);
+            selectedDateEl.textContent = `Выбрано: ${formatDateDisplay(selectedDate)}`;
+            confirmBtn.disabled = false;
+            renderCalendar();
         }
 
-        // Форматирует дату в YYYY-MM-DD для отправки в бот
         function formatDate(date) {
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -305,7 +321,6 @@ HTML-страница для выбора даты в Telegram Web App.
             return `${year}-${month}-${day}`;
         }
 
-        // Форматирует дату для отображения пользователю (день месяц год)
         function formatDateDisplay(date) {
             const day = date.getDate();
             const month = monthNames[date.getMonth()];
@@ -313,34 +328,25 @@ HTML-страница для выбора даты в Telegram Web App.
             return `${day} ${month} ${year}`;
         }
 
-        // Обработчики для кнопок навигации по месяцам
-        document.getElementById('prevMonth').addEventListener('click', () => {
+        prevMonth.addEventListener('click', () => {
             currentDate.setMonth(currentDate.getMonth() - 1);
             renderCalendar();
         });
 
-        document.getElementById('nextMonth').addEventListener('click', () => {
+        nextMonth.addEventListener('click', () => {
             currentDate.setMonth(currentDate.getMonth() + 1);
             renderCalendar();
         });
 
-        // Обработчик кнопки подтверждения выбора даты
-        document.getElementById('confirmBtn').addEventListener('click', () => {
+        confirmBtn.addEventListener('click', () => {
             if (selectedDate) {
                 const dateStr = formatDate(selectedDate);
-                alert('Выбрана дата: ' + dateStr + '\nОтправляем в бот...');
-                tg.sendData(dateStr); // Отправляем данные в Telegram бот
-                tg.close(); // Закрываем Web App
-            } else {
-                alert('Дата не выбрана!');
+                tg.sendData(dateStr);
+                tg.close();
             }
         });
 
-        // Инициализация календаря при загрузке
-        console.log('Инициализация календаря');
         renderCalendar();
-        console.log('Календарь инициализирован');
-    });
-</script>
+    </script>
 </body>
 </html>

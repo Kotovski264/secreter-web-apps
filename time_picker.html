@@ -1,0 +1,286 @@
+<!--
+static/time_picker.html
+HTML-страница для выбора времени в Telegram Web App.
+Отображает прокручиваемые списки часов и минут, позволяет выбрать время и отправить обратно в бот.
+-->
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Выбор времени</title>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        background: #ffffff; /* фиксированный белый фон вместо переменной */
+        color: #000000; /* фиксированный чёрный текст */
+        padding: 20px;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .container {
+        width: 100%;
+        max-width: 400px;
+    }
+
+    h1 {
+        text-align: center;
+        margin-bottom: 30px;
+        font-size: 24px;
+        color: #000000;
+    }
+
+    .picker-container {
+        background: #f0f0f0; /* фиксированный серый фон */
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .picker-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+        height: 200px;
+        position: relative;
+    }
+
+    .picker-column {
+        flex: 1;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .picker-label {
+        text-align: center;
+        font-size: 14px;
+        font-weight: 600;
+        color: #999999; /* фиксированный серый для подсказок */
+        margin-bottom: 10px;
+        text-transform: uppercase;
+    }
+
+    .picker-scroll {
+        height: 100%;
+        overflow-y: scroll;
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .picker-scroll::-webkit-scrollbar {
+        display: none;
+    }
+
+    .picker-list {
+        list-style: none;
+        padding: 80px 0;
+    }
+
+    .picker-item {
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: #000000;
+        cursor: pointer;
+        transition: all 0.2s;
+        user-select: none;
+    }
+
+    .picker-item.selected {
+        font-size: 24px;
+        font-weight: 600;
+        color: #3390ec; /* фиксированный синий для выделенного */
+    }
+
+    .picker-mask {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 100%;
+        pointer-events: none;
+        background: linear-gradient(
+            to bottom,
+            #f0f0f0 0%,
+            transparent 30%,
+            transparent 70%,
+            #f0f0f0 100%
+        );
+    }
+
+    .picker-selection {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 40px;
+        transform: translateY(-50%);
+        border-top: 1px solid #3390ec;
+        border-bottom: 1px solid #3390ec;
+        pointer-events: none;
+    }
+
+    .selected-time {
+        text-align: center;
+        margin-top: 15px;
+        font-size: 18px;
+        color: #000000;
+        min-height: 24px;
+        font-weight: 600;
+    }
+
+    .confirm-btn {
+        width: 100%;
+        padding: 15px;
+        background: #3390ec;
+        color: #ffffff;
+        border: none;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.2s;
+        margin-top: 10px;
+    }
+
+    .confirm-btn:active {
+        opacity: 0.7;
+    }
+
+    .confirm-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+</style>
+</head>
+<body>
+    <div class="container">
+        <h1>Выберите время</h1>
+        <div class="picker-container">
+            <div class="picker-wrapper">
+                <div class="picker-column">
+                    <div class="picker-label">Часы</div>
+                    <div class="picker-scroll">
+                        <ul id="hoursList" class="picker-list"></ul>
+                    </div>
+                </div>
+                <div class="picker-column">
+                    <div class="picker-label">Минуты</div>
+                    <div class="picker-scroll">
+                        <ul id="minutesList" class="picker-list"></ul>
+                    </div>
+                </div>
+            </div>
+            <div class="picker-mask"></div>
+            <div class="picker-selection"></div>
+        </div>
+        <div id="selectedTime" class="selected-time"></div>
+        <button id="confirmBtn" class="confirm-btn" disabled>Подтвердить</button>
+    </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        let selectedHour = 12;
+        let selectedMinute = 0;
+
+        // Генерация часов (0-23)
+        const hoursList = document.getElementById('hoursList');
+        for (let h = 0; h < 24; h++) {
+            const li = document.createElement('li');
+            li.className = 'picker-item';
+            li.textContent = String(h).padStart(2, '0');
+            li.dataset.value = h;
+            li.addEventListener('click', () => selectHour(h));
+            hoursList.appendChild(li);
+        }
+
+        // Генерация минут (0-59)
+        const minutesList = document.getElementById('minutesList');
+        for (let m = 0; m < 60; m++) {
+            const li = document.createElement('li');
+            li.className = 'picker-item';
+            li.textContent = String(m).padStart(2, '0');
+            li.dataset.value = m;
+            li.addEventListener('click', () => selectMinute(m));
+            minutesList.appendChild(li);
+        }
+
+        function selectHour(hour) {
+            selectedHour = hour;
+            updateSelection('hoursList', hour);
+            updateSelectedTime();
+        }
+
+        function selectMinute(minute) {
+            selectedMinute = minute;
+            updateSelection('minutesList', minute);
+            updateSelectedTime();
+        }
+
+        function updateSelection(listId, value) {
+            const list = document.getElementById(listId);
+            const items = list.querySelectorAll('.picker-item');
+            items.forEach(item => {
+                if (parseInt(item.dataset.value) === value) {
+                    item.classList.add('selected');
+                } else {
+                    item.classList.remove('selected');
+                }
+            });
+            // Прокрутка к выбранному элементу
+            const selectedItem = list.querySelector('.picker-item.selected');
+            if (selectedItem) {
+                selectedItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        function updateSelectedTime() {
+            const timeStr = `${String(selectedHour).padStart(2, '0')}:${String(selectedMinute).padStart(2, '0')}`;
+            document.getElementById('selectedTime').textContent = `Выбрано: ${timeStr}`;
+            document.getElementById('confirmBtn').disabled = false;
+        }
+
+        // Обработчик кнопки подтверждения
+        document.getElementById('confirmBtn').addEventListener('click', () => {
+            const timeStr = `${String(selectedHour).padStart(2, '0')}:${String(selectedMinute).padStart(2, '0')}`;
+            alert('Выбрано время: ' + timeStr + '\nОтправляем в бот...');
+            tg.sendData(timeStr); // Отправка данных в бот
+            tg.close(); // Закрытие Web App
+        });
+
+        // Инициализация
+        selectHour(selectedHour);
+        selectMinute(selectedMinute);
+    });
+</script>
+</body>
+</html></script>
+</body>
+</html>    });
+</script>
+</body>
+</html>
+</html>

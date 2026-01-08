@@ -183,11 +183,14 @@
 
     <script>
     const tg = window.Telegram.WebApp;
+    console.log("Date picker script started");
     tg.ready();
+    console.log("Telegram WebApp ready and expanded");
     tg.expand();
 
     // Применяем тему Telegram (твой код без изменений)
     if (tg.themeParams) {
+        console.log("Applying Telegram theme:", tg.themeParams);
         const tp = tg.themeParams;
         document.body.style.backgroundColor = tp.bg_color || '#ffffff';
         document.body.style.color = tp.text_color || '#000000';
@@ -212,12 +215,15 @@
             d.style.color = buttonText;
         });
         document.querySelectorAll('.holiday').forEach(h => h.style.color = buttonBg);
+    } else {
+        console.log("Telegram themeParams not available");
     }
 
     const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
     let currentDate = new Date();
-    let selectedDate = new Date(); // ← текущая дата выбрана по умолчанию
+    let selectedDate = new Date(); // текущая дата по умолчанию
     selectedDate.setHours(0, 0, 0, 0);
+    console.log("Initial selected date:", formatDate(selectedDate));
 
     const monthYear = document.getElementById('monthYear');
     const daysGrid = document.getElementById('daysGrid');
@@ -244,6 +250,7 @@
     };
 
     function renderCalendar() {
+        console.log("Rendering calendar for:", currentDate.toLocaleDateString('ru-RU'));
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
         monthYear.textContent = `${monthNames[month]} ${year}`;
@@ -254,7 +261,6 @@
         const daysInPrevMonth = new Date(year, month, 0).getDate();
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const isCurrentMonth = year === today.getFullYear() && month === today.getMonth();
 
         let startDay = firstDay === 0 ? 6 : firstDay - 1;
 
@@ -272,17 +278,14 @@
             dayEl.classList.add('day');
             dayEl.textContent = day;
 
-            const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            dayEl.dataset.date = dateKey;
+            const thisDate = new Date(year, month, day);
+            thisDate.setHours(0, 0, 0, 0);
 
             const holidayKey = `${month + 1}-${day}`;
             if (holidays[holidayKey]) {
                 dayEl.classList.add('holiday');
                 dayEl.title = holidays[holidayKey];
             }
-
-            const thisDate = new Date(year, month, day);
-            thisDate.setHours(0, 0, 0, 0);
 
             if (thisDate.getTime() === today.getTime()) {
                 dayEl.classList.add('today');
@@ -292,12 +295,12 @@
                 dayEl.classList.add('selected');
             }
 
-            // Прошедшие даты отключены
             if (thisDate < today) {
                 dayEl.classList.add('disabled');
             } else {
                 dayEl.addEventListener('click', () => {
                     selectedDate = thisDate;
+                    console.log("Date selected by click:", formatDate(selectedDate));
                     updateSelected();
                     renderCalendar();
                 });
@@ -306,7 +309,7 @@
             daysGrid.appendChild(dayEl);
         }
 
-        // Следующий месяц
+        // Следующий месяц (заполнение)
         const remainingDays = 42 - (startDay + daysInMonth);
         for (let day = 1; day <= remainingDays; day++) {
             const dayEl = document.createElement('div');
@@ -320,7 +323,8 @@
 
     function updateSelected() {
         selectedDateEl.textContent = `Выбрано: ${formatDateDisplay(selectedDate)}`;
-        confirmBtn.disabled = false; // всегда активна
+        confirmBtn.disabled = false;
+        console.log("Updated selected display:", formatDateDisplay(selectedDate));
     }
 
     function formatDate(date) {
@@ -339,21 +343,26 @@
 
     prevMonth.addEventListener('click', () => {
         currentDate.setMonth(currentDate.getMonth() - 1);
+        console.log("Previous month clicked");
         renderCalendar();
     });
 
     nextMonth.addEventListener('click', () => {
         currentDate.setMonth(currentDate.getMonth() + 1);
+        console.log("Next month clicked");
         renderCalendar();
     });
 
     confirmBtn.addEventListener('click', () => {
         const dateStr = formatDate(selectedDate);
+        console.log("Confirm button clicked. Sending data to bot:", dateStr);
         tg.sendData(dateStr);
         tg.close();
+        console.log("WebApp closed after sending data");
     });
 
     renderCalendar();
+    console.log("Calendar rendered initially");
 </script>
 </body>
 </html>

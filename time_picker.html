@@ -169,8 +169,19 @@
 
   <script>
     const tg = window.Telegram.WebApp;
-    tg.ready();
-    tg.expand();
+    console.log("⏰ Time picker script started");
+    console.log("⏰ Telegram WebApp object:", tg);
+    
+    if (!tg) {
+        console.error("❌ ERROR: window.Telegram.WebApp is not available!");
+        alert("Ошибка: Telegram WebApp API не загружен!");
+    } else {
+        console.log("✅ Telegram WebApp API loaded");
+        tg.ready();
+        console.log("✅ Telegram WebApp ready");
+        tg.expand();
+        console.log("✅ Telegram WebApp expanded");
+    }
 
     const elements = {
       hoursTens: document.getElementById('hoursTens'),
@@ -218,8 +229,34 @@
 
     document.getElementById('confirmBtn').addEventListener('click', () => {
       const timeStr = String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0');
-      tg.sendData(timeStr);
-      tg.close();
+      console.log("✅ [TIME PICKER] Confirm button clicked. Selected time:", timeStr);
+      console.log("✅ [TIME PICKER] tg object:", tg);
+      console.log("✅ [TIME PICKER] tg.sendData type:", typeof tg.sendData);
+      
+      try {
+        if (!tg || !tg.sendData) {
+          console.error("❌ [TIME PICKER] ERROR: tg.sendData is not available!");
+          alert("Ошибка: Telegram WebApp API недоступен");
+          return;
+        }
+        
+        console.log("✅ [TIME PICKER] Calling tg.sendData with:", timeStr);
+        tg.sendData(timeStr);
+        console.log("✅ [TIME PICKER] Data sent successfully");
+        
+        // Небольшая задержка перед закрытием для надежности
+        setTimeout(() => {
+          console.log("✅ [TIME PICKER] Closing WebApp");
+          if (tg.close) {
+            tg.close();
+          } else {
+            console.warn("⚠️ [TIME PICKER] tg.close is not available");
+          }
+        }, 100);
+      } catch (error) {
+        console.error("❌ [TIME PICKER] ERROR sending data:", error);
+        alert("Ошибка при отправке данных: " + error.message);
+      }
     });
 
     updateDisplay();

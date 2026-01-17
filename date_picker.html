@@ -183,10 +183,19 @@
 
     <script>
     const tg = window.Telegram.WebApp;
-    console.log("Date picker script started");
-    tg.ready();
-    console.log("Telegram WebApp ready and expanded");
-    tg.expand();
+    console.log("📅 Date picker script started");
+    console.log("📅 Telegram WebApp object:", tg);
+    
+    if (!tg) {
+        console.error("❌ ERROR: window.Telegram.WebApp is not available!");
+        alert("Ошибка: Telegram WebApp API не загружен!");
+    } else {
+        console.log("✅ Telegram WebApp API loaded");
+        tg.ready();
+        console.log("✅ Telegram WebApp ready");
+        tg.expand();
+        console.log("✅ Telegram WebApp expanded");
+    }
 
     // Применяем тему Telegram (твой код без изменений)
     if (tg.themeParams) {
@@ -353,12 +362,36 @@
         renderCalendar();
     });
 
-        confirmBtn.addEventListener('click', () => {
+    confirmBtn.addEventListener('click', () => {
         const dateStr = formatDate(selectedDate);
-        console.log("Confirm button clicked. Sending data to bot:", dateStr);
-        tg.sendData(dateStr);
-        tg.close();
-        console.log("WebApp closed after sending data");
+        console.log("✅ Confirm button clicked. Selected date:", dateStr);
+        console.log("✅ tg object:", tg);
+        console.log("✅ tg.sendData type:", typeof tg.sendData);
+        
+        try {
+            if (!tg || !tg.sendData) {
+                console.error("❌ ERROR: tg.sendData is not available!");
+                alert("Ошибка: Telegram WebApp API недоступен");
+                return;
+            }
+            
+            console.log("✅ Calling tg.sendData with:", dateStr);
+            tg.sendData(dateStr);
+            console.log("✅ Data sent successfully");
+            
+            // Небольшая задержка перед закрытием для надежности
+            setTimeout(() => {
+                console.log("✅ Closing WebApp");
+                if (tg.close) {
+                    tg.close();
+                } else {
+                    console.warn("⚠️ tg.close is not available");
+                }
+            }, 100);
+        } catch (error) {
+            console.error("❌ ERROR sending data:", error);
+            alert("Ошибка при отправке данных: " + error.message);
+        }
     });
 
     // Добавлено только для прохождения теста test_date_picker.py

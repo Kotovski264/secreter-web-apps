@@ -199,12 +199,12 @@
               ctx.closePath();
               ctx.stroke();
             } else if (v === DOT) {
-              ctx.fillStyle = 'rgb(255,214,80)';
+              ctx.fillStyle = 'rgb(220,60,60)';
               ctx.beginPath();
               ctx.arc(c * TILE + TILE/2, r * TILE + TILE/2, 4, 0, Math.PI * 2);
               ctx.fill();
             } else if (v === POWER) {
-              ctx.fillStyle = 'rgb(255,214,80)';
+              ctx.fillStyle = 'rgb(220,60,60)';
               ctx.beginPath();
               ctx.arc(c * TILE + TILE/2, r * TILE + TILE/2, 8, 0, Math.PI * 2);
               ctx.fill();
@@ -214,16 +214,12 @@
       }
 
       function drawPacman() {
-        ctx.save();
-        ctx.translate(pacman.x * TILE + TILE/2, pacman.y * TILE + TILE/2);
-        ctx.rotate((pacman.dir * 90) * Math.PI / 180);
-        ctx.fillStyle = 'rgba(255,214,80,0.95)';
+        var cx = pacman.x * TILE + TILE/2;
+        var cy = pacman.y * TILE + TILE/2;
+        ctx.fillStyle = 'rgb(255,214,80)';
         ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.arc(0, 0, TILE/2 - 2, (0.2 - 0.2) * Math.PI, (0.2 + 0.2) * Math.PI); // static mouth, no animation
-        ctx.closePath();
+        ctx.arc(cx, cy, TILE/2 - 2, 0, Math.PI * 2);
         ctx.fill();
-        ctx.restore();
       }
 
       function drawGhost(g) {

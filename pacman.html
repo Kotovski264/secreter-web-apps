@@ -183,9 +183,21 @@
           for (var c = 0; c < COLS; c++) {
             var v = maze[r][c];
             if (v === WALL) {
-              ctx.strokeStyle = 'rgba(255,255,255,0.18)';
-              ctx.lineWidth = 1.5;
-              ctx.strokeRect(c * TILE + 2, r * TILE + 2, TILE - 4, TILE - 4);
+              ctx.strokeStyle = 'rgba(100,160,255,0.9)'; // Blue, like numbers in other webapps
+              ctx.lineWidth = 2;
+              var x = c * TILE + 2;
+              var y = r * TILE + 2;
+              var w = TILE - 4;
+              var h = TILE - 4;
+              var radius = 4; // Rounded corners
+              ctx.beginPath();
+              ctx.moveTo(x + radius, y);
+              ctx.arcTo(x + w, y, x + w, y + h, radius);
+              ctx.arcTo(x + w, y + h, x, y + h, radius);
+              ctx.arcTo(x, y + h, x, y, radius);
+              ctx.arcTo(x, y, x + w, y, radius);
+              ctx.closePath();
+              ctx.stroke();
             } else if (v === DOT) {
               ctx.fillStyle = 'rgba(255,255,255,0.55)';
               ctx.beginPath();

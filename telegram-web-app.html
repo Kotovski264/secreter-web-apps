@@ -8,41 +8,113 @@
   <style>
     * { box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
       margin: 0;
-      padding: 16px;
-      background: var(--tg-theme-bg-color, #fff);
-      color: var(--tg-theme-text-color, #000);
+      padding: 0;
+      background: var(--tg-theme-bg-color, #000);
+      color: var(--tg-theme-text-color, #fff);
       min-height: 100vh;
+      -webkit-user-select: none;
+      user-select: none;
     }
-    h1 { font-size: 1.25rem; margin: 0 0 16px; }
-    label { display: block; margin-bottom: 6px; font-weight: 500; }
-    input, select {
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 16px;
-      border: 1px solid var(--tg-theme-hint-color, #999);
-      border-radius: 8px;
-      font-size: 16px;
-      background: var(--tg-theme-bg-color);
-      color: var(--tg-theme-text-color);
+    .header {
+      padding: 20px 16px 12px;
+      text-align: center;
+      font-size: 0.9rem;
+      color: var(--tg-theme-hint-color, rgba(255,255,255,0.6));
     }
-    .hint { font-size: 0.875rem; color: var(--tg-theme-hint-color); margin-top: 4px; }
+    .picker-wrap {
+      position: relative;
+      height: 220px;
+      margin: 0 16px;
+      overflow: hidden;
+    }
+    .picker-wrap::before,
+    .picker-wrap::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 88px;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .picker-wrap::before {
+      top: 0;
+      background: linear-gradient(to bottom, var(--tg-theme-bg-color, #000) 0%, transparent 100%);
+    }
+    .picker-wrap::after {
+      bottom: 0;
+      background: linear-gradient(to top, var(--tg-theme-bg-color, #000) 0%, transparent 100%);
+    }
+    .picker-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 220px;
+      gap: 8px;
+    }
+    .wheel {
+      flex: 1;
+      max-width: 80px;
+      height: 100%;
+      overflow-y: scroll;
+      overflow-x: hidden;
+      scroll-snap-type: y mandatory;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .wheel::-webkit-scrollbar { display: none; }
+    .wheel-inner {
+      padding: 88px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .wheel-item {
+      height: 44px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      scroll-snap-align: center;
+      font-size: 1.75rem;
+      font-weight: 300;
+      color: var(--tg-theme-hint-color, rgba(255,255,255,0.4));
+      transition: color 0.15s, font-weight 0.15s;
+    }
+    .wheel-item.selected {
+      color: var(--tg-theme-text-color, #fff);
+      font-weight: 400;
+    }
+    .separator {
+      font-size: 1.75rem;
+      font-weight: 300;
+      color: var(--tg-theme-hint-color, rgba(255,255,255,0.5));
+      padding-bottom: 8px;
+    }
+    .hint {
+      padding: 12px 16px;
+      font-size: 0.8rem;
+      color: var(--tg-theme-hint-color, rgba(255,255,255,0.5));
+      text-align: center;
+    }
   </style>
 </head>
 <body>
-  <h1>Когда вам удобно, чтобы с вами связались?</h1>
-  <label for="date">Дата</label>
-  <input type="date" id="date" required>
-  <label for="slot">Время</label>
-  <select id="slot">
-    <option value="09:00–12:00">Утро (9:00–12:00)</option>
-    <option value="12:00–15:00">День (12:00–15:00)</option>
-    <option value="15:00–18:00">День (15:00–18:00)</option>
-    <option value="18:00–21:00">Вечер (18:00–21:00)</option>
-    <option value="любое">Любое удобное время</option>
-  </select>
-  <p class="hint">Нажмите кнопку внизу, чтобы отправить выбор.</p>
+  <p class="header">Удобное время для связи</p>
+  <div class="picker-wrap">
+    <div class="picker-row">
+      <div class="wheel" id="hour-wheel">
+        <div class="wheel-inner" id="hour-inner"></div>
+      </div>
+      <span class="separator">:</span>
+      <div class="wheel" id="min-wheel">
+        <div class="wheel-inner" id="min-inner"></div>
+      </div>
+    </div>
+  </div>
+  <p class="hint">Нажмите кнопку внизу</p>
 
   <script>
     (function () {
@@ -51,18 +123,81 @@
       tg.ready();
       tg.expand();
 
-      var dateInput = document.getElementById('date');
-      var slotSelect = document.getElementById('slot');
+      var hourWheel = document.getElementById('hour-wheel');
+      var minWheel = document.getElementById('min-wheel');
+      var hourInner = document.getElementById('hour-inner');
+      var minInner = document.getElementById('min-inner');
 
-      var tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      dateInput.min = tomorrow.toISOString().slice(0, 10);
+      var itemH = 44;
+      var padding = 88;
 
-      tg.MainButton.setText('Отправить время').show().onClick(function () {
-        var date = dateInput.value;
-        var slot = slotSelect.options[slotSelect.selectedIndex].value;
-        var text = date ? date + ', ' + slot : slot;
-        tg.sendData(JSON.stringify({ time: text }));
+      function fillWheels() {
+        var i, el;
+        hourInner.innerHTML = '';
+        for (i = 0; i < 24; i++) {
+          el = document.createElement('div');
+          el.className = 'wheel-item';
+          el.textContent = (i < 10 ? '0' : '') + i;
+          el.dataset.value = i;
+          hourInner.appendChild(el);
+        }
+        minInner.innerHTML = '';
+        for (i = 0; i < 60; i++) {
+          el = document.createElement('div');
+          el.className = 'wheel-item';
+          el.textContent = (i < 10 ? '0' : '') + i;
+          el.dataset.value = i;
+          minInner.appendChild(el);
+        }
+      }
+
+      function updateSelection(wheel, index) {
+        var items = wheel.querySelectorAll('.wheel-item');
+        items.forEach(function (item, i) {
+          item.classList.toggle('selected', i === index);
+        });
+      }
+
+      function scrollToIndex(wheel, index) {
+        var items = wheel.querySelectorAll('.wheel-item');
+        if (!items[index]) return;
+        var top = padding + index * itemH + (itemH / 2) - (wheel.clientHeight / 2);
+        wheel.scrollTo(0, Math.max(0, top));
+      }
+
+      function getSelectedIndex(wheel) {
+        var center = wheel.scrollTop + (wheel.clientHeight / 2) - padding - (itemH / 2);
+        var index = Math.round(center / itemH);
+        var count = wheel.querySelectorAll('.wheel-item').length;
+        index = Math.max(0, Math.min(index, count - 1));
+        return index;
+      }
+
+      function onWheelScroll(wheel) {
+        var index = getSelectedIndex(wheel);
+        updateSelection(wheel, index);
+      }
+
+      fillWheels();
+
+      var now = new Date();
+      var startHour = now.getHours();
+      var startMin = now.getMinutes();
+      requestAnimationFrame(function () {
+        scrollToIndex(hourWheel, startHour);
+        scrollToIndex(minWheel, startMin);
+        updateSelection(hourWheel, startHour);
+        updateSelection(minWheel, startMin);
+      });
+
+      hourWheel.addEventListener('scroll', function () { onWheelScroll(hourWheel); });
+      minWheel.addEventListener('scroll', function () { onWheelScroll(minWheel); });
+
+      tg.MainButton.setText('Готово').show().onClick(function () {
+        var h = getSelectedIndex(hourWheel);
+        var m = getSelectedIndex(minWheel);
+        var timeStr = (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
+        tg.sendData(JSON.stringify({ time: timeStr }));
         tg.close();
       });
     })();

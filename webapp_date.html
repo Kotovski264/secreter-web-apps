@@ -18,76 +18,96 @@
       user-select: none;
     }
     .header {
-      padding: 20px 16px 12px;
+      padding: 16px 16px 8px;
       text-align: center;
       font-size: 0.9rem;
       color: var(--tg-theme-hint-color, rgba(255,255,255,0.6));
     }
-    .picker-wrap {
-      position: relative;
-      height: 220px;
-      margin: 0 8px;
-      overflow: hidden;
-    }
-    .picker-wrap::before,
-    .picker-wrap::after {
-      content: '';
-      position: absolute;
-      left: 0;
-      right: 0;
-      height: 88px;
-      pointer-events: none;
-      z-index: 1;
-    }
-    .picker-wrap::before {
-      top: 0;
-      background: linear-gradient(to bottom, var(--tg-theme-bg-color, #000) 0%, transparent 100%);
-    }
-    .picker-wrap::after {
-      bottom: 0;
-      background: linear-gradient(to top, var(--tg-theme-bg-color, #000) 0%, transparent 100%);
-    }
-    .picker-row {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 220px;
-      gap: 4px;
-    }
-    .wheel {
-      flex: 1;
-      max-width: 70px;
-      height: 100%;
-      overflow-y: scroll;
-      overflow-x: hidden;
-      scroll-snap-type: y mandatory;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-    }
-    .wheel::-webkit-scrollbar { display: none; }
-    .wheel-inner {
-      padding: 88px 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .wheel-item {
-      height: 44px;
-      min-height: 44px;
+    .nav {
       display: flex;
       align-items: center;
-      justify-content: center;
-      scroll-snap-align: center;
-      font-size: 1.5rem;
-      font-weight: 300;
-      color: var(--tg-theme-hint-color, rgba(255,255,255,0.4));
-      transition: color 0.15s, font-weight 0.15s;
+      justify-content: space-between;
+      padding: 8px 12px 16px;
+      max-width: 320px;
+      margin: 0 auto;
     }
-    .wheel-item.selected {
+    .nav-btn {
+      width: 40px;
+      height: 40px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.12);
       color: var(--tg-theme-text-color, #fff);
-      font-weight: 400;
+      font-size: 1.2rem;
+      font-weight: 300;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.2s;
     }
-    .wheel-day .wheel-item { font-size: 1.75rem; }
+    .nav-btn:active { background: rgba(255,255,255,0.2); }
+    .nav-title {
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: var(--tg-theme-text-color, #fff);
+    }
+    .calendar-wrap {
+      padding: 0 12px 16px;
+      max-width: 320px;
+      margin: 0 auto;
+    }
+    .weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .weekday {
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: var(--tg-theme-hint-color, rgba(255,255,255,0.5));
+      padding: 4px 0;
+    }
+    .days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      text-align: center;
+    }
+    .day {
+      aspect-ratio: 1;
+      max-width: 44px;
+      max-height: 44px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      font-weight: 400;
+      color: var(--tg-theme-hint-color, rgba(255,255,255,0.4));
+      border-radius: 50%;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: color 0.15s, background 0.15s;
+    }
+    .day.other-month {
+      color: var(--tg-theme-hint-color, rgba(255,255,255,0.25));
+    }
+    .day.today {
+      color: var(--tg-theme-text-color, #fff);
+      font-weight: 500;
+    }
+    .day.selected {
+      background: var(--tg-theme-button-color, rgba(255,255,255,0.25));
+      color: var(--tg-theme-button-text-color, #fff);
+      font-weight: 500;
+    }
+    .day:not(.other-month):active {
+      background: rgba(255,255,255,0.15);
+    }
     .hint {
       padding: 12px 16px;
       font-size: 0.8rem;
@@ -98,18 +118,22 @@
 </head>
 <body>
   <p class="header">Удобная дата для связи</p>
-  <div class="picker-wrap">
-    <div class="picker-row">
-      <div class="wheel wheel-day" id="day-wheel">
-        <div class="wheel-inner" id="day-inner"></div>
-      </div>
-      <div class="wheel" id="month-wheel">
-        <div class="wheel-inner" id="month-inner"></div>
-      </div>
-      <div class="wheel" id="year-wheel">
-        <div class="wheel-inner" id="year-inner"></div>
-      </div>
+  <div class="nav">
+    <button type="button" class="nav-btn" id="prev-month" aria-label="Предыдущий месяц">‹</button>
+    <span class="nav-title" id="month-title"></span>
+    <button type="button" class="nav-btn" id="next-month" aria-label="Следующий месяц">›</button>
+  </div>
+  <div class="calendar-wrap">
+    <div class="weekdays">
+      <span class="weekday">Пн</span>
+      <span class="weekday">Вт</span>
+      <span class="weekday">Ср</span>
+      <span class="weekday">Чт</span>
+      <span class="weekday">Пт</span>
+      <span class="weekday">Сб</span>
+      <span class="weekday">Вс</span>
     </div>
+    <div class="days" id="days"></div>
   </div>
   <p class="hint">Нажмите кнопку внизу</p>
 
@@ -120,124 +144,119 @@
       tg.ready();
       tg.expand();
 
-      var dayWheel = document.getElementById('day-wheel');
-      var monthWheel = document.getElementById('month-wheel');
-      var yearWheel = document.getElementById('year-wheel');
-      var dayInner = document.getElementById('day-inner');
-      var monthInner = document.getElementById('month-inner');
-      var yearInner = document.getElementById('year-inner');
+      var monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+        'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 
-      var itemH = 44;
-      var padding = 88;
-      var months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+      var current = new Date();
+      var viewYear = current.getFullYear();
+      var viewMonth = current.getMonth();
+      var selectedDate = null;
 
-      function daysInMonth(month, year) {
-        return new Date(year, month + 1, 0).getDate();
+      var monthTitle = document.getElementById('month-title');
+      var daysEl = document.getElementById('days');
+      var prevBtn = document.getElementById('prev-month');
+      var nextBtn = document.getElementById('next-month');
+
+      function setSelected(y, m, d) {
+        selectedDate = { year: y, month: m, day: d };
       }
 
-      function fillDayWheel(month, year) {
-        var n = daysInMonth(month, year);
-        dayInner.innerHTML = '';
-        for (var d = 1; d <= n; d++) {
-          var el = document.createElement('div');
-          el.className = 'wheel-item';
-          el.textContent = d;
-          el.dataset.value = d;
-          dayInner.appendChild(el);
-        }
-        return n;
-      }
+      function render() {
+        monthTitle.textContent = monthNames[viewMonth] + ' ' + viewYear;
+        daysEl.innerHTML = '';
 
-      function fillMonthWheel() {
-        monthInner.innerHTML = '';
-        for (var i = 0; i < 12; i++) {
-          var el = document.createElement('div');
-          el.className = 'wheel-item';
-          el.textContent = months[i];
-          el.dataset.value = i;
-          monthInner.appendChild(el);
-        }
-      }
+        var first = new Date(viewYear, viewMonth, 1);
+        var last = new Date(viewYear, viewMonth + 1, 0);
+        var startDow = first.getDay();
+        startDow = startDow === 0 ? 6 : startDow - 1;
+        var daysInMonth = last.getDate();
 
-      function fillYearWheel() {
-        var now = new Date();
-        var y = now.getFullYear();
-        yearInner.innerHTML = '';
-        for (var i = y; i <= y + 2; i++) {
-          var el = document.createElement('div');
-          el.className = 'wheel-item';
-          el.textContent = i;
-          el.dataset.value = i;
-          yearInner.appendChild(el);
-        }
-      }
+        var today = new Date();
+        var todayY = today.getFullYear();
+        var todayM = today.getMonth();
+        var todayD = today.getDate();
 
-      function updateSelection(wheel, index) {
-        var items = wheel.querySelectorAll('.wheel-item');
-        items.forEach(function (item, i) {
-          item.classList.toggle('selected', i === index);
-        });
-      }
+        var prevMonth = viewMonth === 0 ? 11 : viewMonth - 1;
+        var prevYear = viewMonth === 0 ? viewYear - 1 : viewYear;
+        var prevLast = new Date(prevYear, prevMonth + 1, 0).getDate();
 
-      function scrollToIndex(wheel, index) {
-        var items = wheel.querySelectorAll('.wheel-item');
-        if (!items[index]) return;
-        var top = padding + index * itemH + (itemH / 2) - (wheel.clientHeight / 2);
-        wheel.scrollTo(0, Math.max(0, top));
-      }
+        var totalCells = startDow + daysInMonth;
+        var rows = Math.ceil(totalCells / 7);
+        var total = rows * 7;
+        var dayNum = 1;
+        var nextDayNum = 1;
 
-      function getSelectedIndex(wheel) {
-        var center = wheel.scrollTop + (wheel.clientHeight / 2) - padding - (itemH / 2);
-        var index = Math.round(center / itemH);
-        var count = wheel.querySelectorAll('.wheel-item').length;
-        index = Math.max(0, Math.min(index, count - 1));
-        return index;
-      }
+        for (var i = 0; i < total; i++) {
+          var cell = document.createElement('div');
+          cell.className = 'day';
 
-      function onWheelScroll(wheel) {
-        var index = getSelectedIndex(wheel);
-        updateSelection(wheel, index);
-        if (wheel === monthWheel || wheel === yearWheel) {
-          var month = getSelectedIndex(monthWheel);
-          var year = parseInt(yearWheel.querySelectorAll('.wheel-item')[getSelectedIndex(yearWheel)].dataset.value, 10);
-          var oldDay = getSelectedIndex(dayWheel) + 1;
-          var maxDay = daysInMonth(month, year);
-          if (oldDay > maxDay) oldDay = maxDay;
-          fillDayWheel(month, year);
-          requestAnimationFrame(function () {
-            scrollToIndex(dayWheel, oldDay - 1);
-            updateSelection(dayWheel, oldDay - 1);
+          if (i < startDow) {
+            var d = prevLast - startDow + i + 1;
+            cell.textContent = d;
+            cell.classList.add('other-month');
+            cell.dataset.year = prevYear;
+            cell.dataset.month = prevMonth;
+            cell.dataset.day = d;
+          } else if (dayNum <= daysInMonth) {
+            cell.textContent = dayNum;
+            cell.dataset.year = viewYear;
+            cell.dataset.month = viewMonth;
+            cell.dataset.day = dayNum;
+            if (viewYear === todayY && viewMonth === todayM && dayNum === todayD) {
+              cell.classList.add('today');
+            }
+            if (selectedDate && selectedDate.year === viewYear && selectedDate.month === viewMonth && selectedDate.day === dayNum) {
+              cell.classList.add('selected');
+            }
+            dayNum++;
+          } else {
+            cell.textContent = nextDayNum;
+            cell.classList.add('other-month');
+            var nextMonth = viewMonth === 11 ? 0 : viewMonth + 1;
+            var nextYear = viewMonth === 11 ? viewYear + 1 : viewYear;
+            cell.dataset.year = nextYear;
+            cell.dataset.month = nextMonth;
+            cell.dataset.day = nextDayNum;
+            nextDayNum++;
+          }
+
+          cell.addEventListener('click', function () {
+            var y = parseInt(this.dataset.year, 10);
+            var m = parseInt(this.dataset.month, 10);
+            var d = parseInt(this.dataset.day, 10);
+            setSelected(y, m, d);
+            if (m !== viewMonth || y !== viewYear) {
+              viewYear = y;
+              viewMonth = m;
+              render();
+            } else {
+              daysEl.querySelectorAll('.day.selected').forEach(function (el) { el.classList.remove('selected'); });
+              this.classList.add('selected');
+            }
           });
+          daysEl.appendChild(cell);
         }
       }
 
-      fillMonthWheel();
-      fillYearWheel();
+      setSelected(current.getFullYear(), current.getMonth(), current.getDate());
+      render();
 
-      var now = new Date();
-      var startYear = now.getFullYear();
-      var startMonth = now.getMonth();
-      var startDay = now.getDate();
-      fillDayWheel(startMonth, startYear);
-
-      requestAnimationFrame(function () {
-        scrollToIndex(dayWheel, startDay - 1);
-        scrollToIndex(monthWheel, startMonth);
-        scrollToIndex(yearWheel, 0);
-        updateSelection(dayWheel, startDay - 1);
-        updateSelection(monthWheel, startMonth);
-        updateSelection(yearWheel, 0);
+      prevBtn.addEventListener('click', function () {
+        viewMonth--;
+        if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+        render();
+      });
+      nextBtn.addEventListener('click', function () {
+        viewMonth++;
+        if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+        render();
       });
 
-      dayWheel.addEventListener('scroll', function () { onWheelScroll(dayWheel); });
-      monthWheel.addEventListener('scroll', function () { onWheelScroll(monthWheel); });
-      yearWheel.addEventListener('scroll', function () { onWheelScroll(yearWheel); });
-
       tg.MainButton.setText('Готово').show().onClick(function () {
-        var day = getSelectedIndex(dayWheel) + 1;
-        var month = getSelectedIndex(monthWheel);
-        var year = parseInt(yearWheel.querySelectorAll('.wheel-item')[getSelectedIndex(yearWheel)].dataset.value, 10);
-        var dateStr = year + '-' + (month < 9 ? '0' : '') + (month + 1) + '-' + (day < 10 ? '0' : '') + day;
+        var d = selectedDate.day;
+        var m = selectedDate.month;
+        var y = selectedDate.year;
+        var dateStr = y + '-' + (m < 9 ? '0' : '') + (m + 1) + '-' + (d < 10 ? '0' : '') + d;
         tg.sendData(JSON.stringify({ date: dateStr }));
         tg.close();
       });

@@ -50,33 +50,6 @@
       image-rendering: pixelated;
       image-rendering: crisp-edges;
     }
-    .dpad-wrap {
-      margin-top: 20px;
-      position: relative;
-      width: 140px;
-      height: 140px;
-    }
-    .dpad-btn {
-      position: absolute;
-      width: 44px;
-      height: 44px;
-      border: none;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.12);
-      color: var(--tg-theme-text-color, #fff);
-      font-size: 1.1rem;
-      font-weight: 300;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      -webkit-tap-highlight-color: transparent;
-      transition: background 0.2s;
-    }
-    .dpad-btn:active { background: rgba(255,255,255,0.22); }
-    .dpad-up   { top: 0;   left: 50%; transform: translateX(-50%); }
-    .dpad-down { bottom: 0; left: 50%; transform: translateX(-50%); }
-    .dpad-left { left: 0;  top: 50%;  transform: translateY(-50%); }
-    .dpad-right{ right: 0; top: 50%;  transform: translateY(-50%); }
     .game-over, .game-win {
       position: fixed;
       inset: 0;
@@ -123,12 +96,6 @@
   </div>
   <div id="game-wrap">
     <canvas id="canvas"></canvas>
-  </div>
-  <div class="dpad-wrap">
-    <button type="button" class="dpad-btn dpad-up" id="btn-up" aria-label="Вверх">▲</button>
-    <button type="button" class="dpad-btn dpad-down" id="btn-down" aria-label="Вниз">▼</button>
-    <button type="button" class="dpad-btn dpad-left" id="btn-left" aria-label="Влево">◀</button>
-    <button type="button" class="dpad-btn dpad-right" id="btn-right" aria-label="Вправо">▶</button>
   </div>
   <div class="game-over" id="game-over">
     <h2>Игра окончена</h2>
@@ -384,11 +351,6 @@
       function setNextDir(d) {
         pacman.nextDir = d;
       }
-
-      document.getElementById('btn-up').addEventListener('click', function() { setNextDir(0); });
-      document.getElementById('btn-down').addEventListener('click', function() { setNextDir(2); });
-      document.getElementById('btn-left').addEventListener('click', function() { setNextDir(1); });
-      document.getElementById('btn-right').addEventListener('click', function() { setNextDir(3); });
 
       document.addEventListener('keydown', function(e) {
         if ([37,38,39,40].indexOf(e.keyCode) >= 0) e.preventDefault();

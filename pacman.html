@@ -11,7 +11,7 @@
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
       margin: 0;
       padding: 0;
-      background: var(--tg-theme-bg-color, #000);
+      background: var(--tg-theme-bg-color, #2c2c2e);
       color: var(--tg-theme-text-color, #fff);
       min-height: 100vh;
       -webkit-user-select: none;
@@ -29,9 +29,10 @@
       max-width: 320px;
       padding: 0 12px 8px;
       font-size: 0.9rem;
-      color: var(--tg-theme-hint-color, rgba(255,255,255,0.6));
+      font-weight: 300;
+      color: var(--tg-theme-hint-color, rgba(255,255,255,0.5));
     }
-    .score { font-weight: 500; color: var(--tg-theme-text-color, #fff); }
+    .score { font-weight: 400; color: var(--tg-theme-text-color, #fff); }
     #game-wrap {
       width: 100%;
       max-width: 320px;
@@ -39,7 +40,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #000;
+      background: transparent;
+      border-radius: 20px;
     }
     #canvas {
       display: block;
@@ -49,7 +51,7 @@
       image-rendering: crisp-edges;
     }
     .dpad-wrap {
-      margin-top: 16px;
+      margin-top: 20px;
       position: relative;
       width: 140px;
       height: 140px;
@@ -59,17 +61,18 @@
       width: 44px;
       height: 44px;
       border: none;
-      border-radius: 12px;
-      background: rgba(255,255,255,0.15);
+      border-radius: 50%;
+      background: rgba(255,255,255,0.12);
       color: var(--tg-theme-text-color, #fff);
-      font-size: 1.25rem;
+      font-size: 1.1rem;
+      font-weight: 300;
       display: flex;
       align-items: center;
       justify-content: center;
       -webkit-tap-highlight-color: transparent;
-      transition: background 0.15s;
+      transition: background 0.2s;
     }
-    .dpad-btn:active { background: rgba(255,255,255,0.3); }
+    .dpad-btn:active { background: rgba(255,255,255,0.22); }
     .dpad-up   { top: 0;   left: 50%; transform: translateX(-50%); }
     .dpad-down { bottom: 0; left: 50%; transform: translateX(-50%); }
     .dpad-left { left: 0;  top: 50%;  transform: translateY(-50%); }
@@ -77,7 +80,9 @@
     .game-over, .game-win {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.85);
+      background: rgba(44,44,46,0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       display: none;
       flex-direction: column;
       align-items: center;
@@ -87,22 +92,25 @@
     }
     .game-over.show, .game-win.show { display: flex; }
     .game-over h2, .game-win h2 {
-      font-size: 1.5rem;
+      font-size: 1.4rem;
+      font-weight: 400;
       margin: 0 0 12px;
       color: var(--tg-theme-text-color, #fff);
     }
-    .game-win h2 { color: #4ade80; }
+    .game-win h2 { color: #34c759; }
     .game-over p, .game-win p {
-      margin: 0 0 16px;
-      color: var(--tg-theme-hint-color, rgba(255,255,255,0.7));
+      margin: 0 0 20px;
+      font-weight: 300;
+      color: var(--tg-theme-hint-color, rgba(255,255,255,0.6));
     }
     .btn-restart {
-      padding: 12px 24px;
+      padding: 12px 28px;
       border: none;
-      border-radius: 12px;
-      background: var(--tg-theme-button-color, rgba(255,255,255,0.25));
-      color: var(--tg-theme-button-text-color, #fff);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.15);
+      color: var(--tg-theme-text-color, #fff);
       font-size: 1rem;
+      font-weight: 400;
       font-family: inherit;
       cursor: pointer;
     }
@@ -170,10 +178,10 @@
       var ctx = canvas.getContext('2d');
       var pacman = { x: 9, y: 15, dir: 0, nextDir: 0, mouth: 0 };
       var ghosts = [
-        { x: 9, y: 9, dir: 0, color: '#f00' },
-        { x: 8, y: 9, dir: 2, color: '#f8b' },
-        { x: 10, y: 9, dir: 0, color: '#0ff' },
-        { x: 9, y: 8, dir: 1, color: '#fa0' },
+        { x: 9, y: 9, dir: 0, color: 'rgba(255,100,100,0.9)' },
+        { x: 8, y: 9, dir: 2, color: 'rgba(255,180,200,0.9)' },
+        { x: 10, y: 9, dir: 0, color: 'rgba(120,220,255,0.9)' },
+        { x: 9, y: 8, dir: 1, color: 'rgba(255,180,100,0.9)' },
       ];
       var score = 0;
       var lives = 3;
@@ -208,17 +216,18 @@
           for (var c = 0; c < COLS; c++) {
             var v = maze[r][c];
             if (v === WALL) {
-              ctx.fillStyle = '#1e3a8a';
-              ctx.fillRect(c * TILE + 1, r * TILE + 1, TILE - 2, TILE - 2);
+              ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+              ctx.lineWidth = 1.5;
+              ctx.strokeRect(c * TILE + 2, r * TILE + 2, TILE - 4, TILE - 4);
             } else if (v === DOT) {
-              ctx.fillStyle = '#fbbf24';
+              ctx.fillStyle = 'rgba(255,255,255,0.55)';
               ctx.beginPath();
               ctx.arc(c * TILE + TILE/2, r * TILE + TILE/2, 2, 0, Math.PI * 2);
               ctx.fill();
             } else if (v === POWER) {
-              ctx.fillStyle = '#fbbf24';
+              ctx.fillStyle = 'rgba(255,255,255,0.6)';
               ctx.beginPath();
-              ctx.arc(c * TILE + TILE/2, r * TILE + TILE/2, 5, 0, Math.PI * 2);
+              ctx.arc(c * TILE + TILE/2, r * TILE + TILE/2, 4, 0, Math.PI * 2);
               ctx.fill();
             }
           }
@@ -229,7 +238,7 @@
         ctx.save();
         ctx.translate(pacman.x * TILE + TILE/2, pacman.y * TILE + TILE/2);
         ctx.rotate((pacman.dir * 90) * Math.PI / 180);
-        ctx.fillStyle = '#fef08a';
+        ctx.fillStyle = 'rgba(255,214,80,0.95)';
         ctx.beginPath();
         ctx.moveTo(0, 0);
         ctx.arc(0, 0, TILE/2 - 2, (0.2 - pacman.mouth) * Math.PI, (0.2 + pacman.mouth) * Math.PI);
@@ -241,7 +250,7 @@
       function drawGhost(g) {
         var x = g.x * TILE + TILE/2;
         var y = g.y * TILE + TILE/2;
-        ctx.fillStyle = powerTimer > 0 ? '#2244ff' : g.color;
+        ctx.fillStyle = powerTimer > 0 ? 'rgba(100,160,255,0.9)' : g.color;
         ctx.beginPath();
         ctx.arc(x, y - 2, TILE/2 - 3, Math.PI, 0);
         ctx.lineTo(x + TILE/2 - 3, y + 4);
@@ -250,12 +259,12 @@
         ctx.closePath();
         ctx.fill();
         if (powerTimer <= 0) {
-          ctx.fillStyle = '#fff';
+          ctx.fillStyle = 'rgba(255,255,255,0.9)';
           ctx.beginPath();
           ctx.arc(x - 4, y - 4, 2, 0, Math.PI * 2);
           ctx.arc(x + 4, y - 4, 2, 0, Math.PI * 2);
           ctx.fill();
-          ctx.fillStyle = '#000';
+          ctx.fillStyle = 'rgba(60,60,70,0.9)';
           ctx.beginPath();
           ctx.arc(x - 4, y - 4, 1, 0, Math.PI * 2);
           ctx.arc(x + 4, y - 4, 1, 0, Math.PI * 2);
@@ -364,8 +373,7 @@
         if (powerTimer > 0) powerTimer--;
         checkCollision();
         checkWin();
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawMaze();
         drawPacman();
         for (var i = 0; i < ghosts.length; i++) drawGhost(ghosts[i]);
@@ -417,10 +425,10 @@
         ];
         pacman = { x: 9, y: 15, dir: 0, nextDir: 0, mouth: 0 };
         ghosts = [
-          { x: 9, y: 9, dir: 0, color: '#f00' },
-          { x: 8, y: 9, dir: 2, color: '#f8b' },
-          { x: 10, y: 9, dir: 0, color: '#0ff' },
-          { x: 9, y: 8, dir: 1, color: '#fa0' },
+          { x: 9, y: 9, dir: 0, color: 'rgba(255,100,100,0.9)' },
+          { x: 8, y: 9, dir: 2, color: 'rgba(255,180,200,0.9)' },
+          { x: 10, y: 9, dir: 0, color: 'rgba(120,220,255,0.9)' },
+          { x: 9, y: 8, dir: 1, color: 'rgba(255,180,100,0.9)' },
         ];
         score = 0; lives = 3; powerTimer = 0; gameOver = false; gameWon = false;
         document.getElementById('score').textContent = '0';

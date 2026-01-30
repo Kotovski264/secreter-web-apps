@@ -184,7 +184,7 @@
             var v = maze[r][c];
             if (v === WALL) {
               ctx.strokeStyle = 'rgba(100,160,255,0.9)'; // Blue, like numbers in other webapps
-              ctx.lineWidth = 2;
+              ctx.lineWidth = 3;
               var x = c * TILE + 2;
               var y = r * TILE + 2;
               var w = TILE - 4;
@@ -220,7 +220,7 @@
         ctx.fillStyle = 'rgba(255,214,80,0.95)';
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.arc(0, 0, TILE/2 - 2, (0.2 - pacman.mouth) * Math.PI, (0.2 + pacman.mouth) * Math.PI);
+        ctx.arc(0, 0, TILE/2 - 2, (0.2 - 0.2) * Math.PI, (0.2 + 0.2) * Math.PI); // static mouth, no animation
         ctx.closePath();
         ctx.fill();
         ctx.restore();
@@ -273,7 +273,6 @@
             document.getElementById('score').textContent = score;
           }
         }
-        pacman.mouth = (pacman.mouth + 0.15) % 0.4;
       }
 
       function moveGhost(g) {

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Когда связаться</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 16px;
+      background: var(--tg-theme-bg-color, #fff);
+      color: var(--tg-theme-text-color, #000);
+      min-height: 100vh;
+    }
+    h1 { font-size: 1.25rem; margin: 0 0 16px; }
+    label { display: block; margin-bottom: 6px; font-weight: 500; }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 16px;
+      border: 1px solid var(--tg-theme-hint-color, #999);
+      border-radius: 8px;
+      font-size: 16px;
+      background: var(--tg-theme-bg-color);
+      color: var(--tg-theme-text-color);
+    }
+    .hint { font-size: 0.875rem; color: var(--tg-theme-hint-color); margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <h1>Когда вам удобно, чтобы с вами связались?</h1>
+  <label for="date">Дата</label>
+  <input type="date" id="date" required>
+  <label for="slot">Время</label>
+  <select id="slot">
+    <option value="09:00–12:00">Утро (9:00–12:00)</option>
+    <option value="12:00–15:00">День (12:00–15:00)</option>
+    <option value="15:00–18:00">День (15:00–18:00)</option>
+    <option value="18:00–21:00">Вечер (18:00–21:00)</option>
+    <option value="любое">Любое удобное время</option>
+  </select>
+  <p class="hint">Нажмите кнопку внизу, чтобы отправить выбор.</p>
+
+  <script>
+    (function () {
+      var tg = window.Telegram && window.Telegram.WebApp;
+      if (!tg) return;
+      tg.ready();
+      tg.expand();
+
+      var dateInput = document.getElementById('date');
+      var slotSelect = document.getElementById('slot');
+
+      var tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      dateInput.min = tomorrow.toISOString().slice(0, 10);
+
+      tg.MainButton.setText('Отправить время').show().onClick(function () {
+        var date = dateInput.value;
+        var slot = slotSelect.options[slotSelect.selectedIndex].value;
+        var text = date ? date + ', ' + slot : slot;
+        tg.sendData(JSON.stringify({ time: text }));
+        tg.close();
+      });
+    })();
+  </script>
+</body>
+</html>

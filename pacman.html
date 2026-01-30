@@ -199,14 +199,14 @@
               ctx.closePath();
               ctx.stroke();
             } else if (v === DOT) {
-              ctx.fillStyle = 'rgba(255,255,255,0.55)';
-              ctx.beginPath();
-              ctx.arc(c * TILE + TILE/2, r * TILE + TILE/2, 2, 0, Math.PI * 2);
-              ctx.fill();
-            } else if (v === POWER) {
-              ctx.fillStyle = 'rgba(255,255,255,0.6)';
+              ctx.fillStyle = 'rgb(255,214,80)';
               ctx.beginPath();
               ctx.arc(c * TILE + TILE/2, r * TILE + TILE/2, 4, 0, Math.PI * 2);
+              ctx.fill();
+            } else if (v === POWER) {
+              ctx.fillStyle = 'rgb(255,214,80)';
+              ctx.beginPath();
+              ctx.arc(c * TILE + TILE/2, r * TILE + TILE/2, 8, 0, Math.PI * 2);
               ctx.fill();
             }
           }

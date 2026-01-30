@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Pacman</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: var(--tg-theme-bg-color, #000);
+      color: var(--tg-theme-text-color, #fff);
+      min-height: 100vh;
+      -webkit-user-select: none;
+      user-select: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px 0 20px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      max-width: 320px;
+      padding: 0 12px 8px;
+      font-size: 0.9rem;
+      color: var(--tg-theme-hint-color, rgba(255,255,255,0.6));
+    }
+    .score { font-weight: 500; color: var(--tg-theme-text-color, #fff); }
+    #game-wrap {
+      width: 100%;
+      max-width: 320px;
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+    }
+    #canvas {
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    .dpad-wrap {
+      margin-top: 16px;
+      position: relative;
+      width: 140px;
+      height: 140px;
+    }
+    .dpad-btn {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      border: none;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.15);
+      color: var(--tg-theme-text-color, #fff);
+      font-size: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s;
+    }
+    .dpad-btn:active { background: rgba(255,255,255,0.3); }
+    .dpad-up   { top: 0;   left: 50%; transform: translateX(-50%); }
+    .dpad-down { bottom: 0; left: 50%; transform: translateX(-50%); }
+    .dpad-left { left: 0;  top: 50%;  transform: translateY(-50%); }
+    .dpad-right{ right: 0; top: 50%;  transform: translateY(-50%); }
+    .game-over, .game-win {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      padding: 20px;
+    }
+    .game-over.show, .game-win.show { display: flex; }
+    .game-over h2, .game-win h2 {
+      font-size: 1.5rem;
+      margin: 0 0 12px;
+      color: var(--tg-theme-text-color, #fff);
+    }
+    .game-win h2 { color: #4ade80; }
+    .game-over p, .game-win p {
+      margin: 0 0 16px;
+      color: var(--tg-theme-hint-color, rgba(255,255,255,0.7));
+    }
+    .btn-restart {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 12px;
+      background: var(--tg-theme-button-color, rgba(255,255,255,0.25));
+      color: var(--tg-theme-button-text-color, #fff);
+      font-size: 1rem;
+      font-family: inherit;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span>Счёт: <span class="score" id="score">0</span></span>
+    <span>Жизни: <span id="lives">3</span></span>
+  </div>
+  <div id="game-wrap">
+    <canvas id="canvas"></canvas>
+  </div>
+  <div class="dpad-wrap">
+    <button type="button" class="dpad-btn dpad-up" id="btn-up" aria-label="Вверх">▲</button>
+    <button type="button" class="dpad-btn dpad-down" id="btn-down" aria-label="Вниз">▼</button>
+    <button type="button" class="dpad-btn dpad-left" id="btn-left" aria-label="Влево">◀</button>
+    <button type="button" class="dpad-btn dpad-right" id="btn-right" aria-label="Вправо">▶</button>
+  </div>
+  <div class="game-over" id="game-over">
+    <h2>Игра окончена</h2>
+    <p>Счёт: <span id="final-score">0</span></p>
+    <button type="button" class="btn-restart" id="restart-btn">Играть снова</button>
+  </div>
+  <div class="game-win" id="game-win">
+    <h2>Победа!</h2>
+    <p>Все точки съедены</p>
+    <button type="button" class="btn-restart" id="win-restart-btn">Играть снова</button>
+  </div>
+
+  <script>
+    (function () {
+      var tg = window.Telegram && window.Telegram.WebApp;
+      if (tg) { tg.ready(); tg.expand(); }
+
+      var TILE = 16;
+      var COLS = 19;
+      var ROWS = 17;
+      var WALL = 1;
+      var DOT = 2;
+      var POWER = 3;
+      var EMPTY = 0;
+
+      var maze = [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,1],
+        [1,3,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,3,1],
+        [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+        [1,2,1,1,2,1,2,1,1,1,1,1,2,1,2,1,1,2,1],
+        [1,2,2,2,2,1,2,2,2,1,2,2,2,1,2,2,2,2,1],
+        [1,1,1,1,2,1,1,0,1,1,1,0,1,1,2,1,1,1,1],
+        [0,0,0,1,2,1,1,0,1,0,1,0,1,1,2,1,0,0,0],
+        [1,1,1,1,2,1,1,0,1,1,1,0,1,1,2,1,1,1,1],
+        [1,2,2,2,2,0,2,2,2,2,2,2,2,0,2,2,2,2,1],
+        [1,1,1,1,2,1,1,1,0,0,0,1,1,1,2,1,1,1,1],
+        [0,2,2,2,2,1,2,2,2,1,2,2,2,1,2,2,2,2,0],
+        [1,1,1,1,2,1,2,1,1,1,1,1,2,1,2,1,1,1,1],
+        [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,1],
+        [1,2,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1],
+        [1,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      ];
+
+      var canvas = document.getElementById('canvas');
+      var ctx = canvas.getContext('2d');
+      var pacman = { x: 9, y: 15, dir: 0, nextDir: 0, mouth: 0 };
+      var ghosts = [
+        { x: 9, y: 9, dir: 0, color: '#f00' },
+        { x: 8, y: 9, dir: 2, color: '#f8b' },
+        { x: 10, y: 9, dir: 0, color: '#0ff' },
+        { x: 9, y: 8, dir: 1, color: '#fa0' },
+      ];
+      var score = 0;
+      var lives = 3;
+      var powerTimer = 0;
+      var gameOver = false;
+      var gameWon = false;
+
+      function resize() {
+        var wrap = document.getElementById('game-wrap');
+        var w = wrap.clientWidth;
+        var h = wrap.clientHeight;
+        var scale = Math.min(w / (COLS * TILE), h / (ROWS * TILE));
+        canvas.width = COLS * TILE;
+        canvas.height = ROWS * TILE;
+        canvas.style.width = (COLS * TILE * scale) + 'px';
+        canvas.style.height = (ROWS * TILE * scale) + 'px';
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      function getTile(y, x) {
+        if (y < 0 || y >= ROWS || x < 0 || x >= COLS) return WALL;
+        return maze[y][x];
+      }
+
+      function setTile(y, x, v) {
+        if (y >= 0 && y < ROWS && x >= 0 && x < COLS) maze[y][x] = v;
+      }
+
+      function drawMaze() {
+        for (var r = 0; r < ROWS; r++) {
+          for (var c = 0; c < COLS; c++) {
+            var v = maze[r][c];
+            if (v === WALL) {
+              ctx.fillStyle = '#1e3a8a';
+              ctx.fillRect(c * TILE + 1, r * TILE + 1, TILE - 2, TILE - 2);
+            } else if (v === DOT) {
+              ctx.fillStyle = '#fbbf24';
+              ctx.beginPath();
+              ctx.arc(c * TILE + TILE/2, r * TILE + TILE/2, 2, 0, Math.PI * 2);
+              ctx.fill();
+            } else if (v === POWER) {
+              ctx.fillStyle = '#fbbf24';
+              ctx.beginPath();
+              ctx.arc(c * TILE + TILE/2, r * TILE + TILE/2, 5, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+        }
+      }
+
+      function drawPacman() {
+        ctx.save();
+        ctx.translate(pacman.x * TILE + TILE/2, pacman.y * TILE + TILE/2);
+        ctx.rotate((pacman.dir * 90) * Math.PI / 180);
+        ctx.fillStyle = '#fef08a';
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, TILE/2 - 2, (0.2 - pacman.mouth) * Math.PI, (0.2 + pacman.mouth) * Math.PI);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function drawGhost(g) {
+        var x = g.x * TILE + TILE/2;
+        var y = g.y * TILE + TILE/2;
+        ctx.fillStyle = powerTimer > 0 ? '#2244ff' : g.color;
+        ctx.beginPath();
+        ctx.arc(x, y - 2, TILE/2 - 3, Math.PI, 0);
+        ctx.lineTo(x + TILE/2 - 3, y + 4);
+        ctx.lineTo(x, y + 2);
+        ctx.lineTo(x - TILE/2 + 3, y + 4);
+        ctx.closePath();
+        ctx.fill();
+        if (powerTimer <= 0) {
+          ctx.fillStyle = '#fff';
+          ctx.beginPath();
+          ctx.arc(x - 4, y - 4, 2, 0, Math.PI * 2);
+          ctx.arc(x + 4, y - 4, 2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#000';
+          ctx.beginPath();
+          ctx.arc(x - 4, y - 4, 1, 0, Math.PI * 2);
+          ctx.arc(x + 4, y - 4, 1, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      function movePacman() {
+        var dx = [0, -1, 0, 1];
+        var dy = [-1, 0, 1, 0];
+        var d = pacman.nextDir !== undefined ? pacman.nextDir : pacman.dir;
+        var nx = pacman.x + dx[d];
+        var ny = pacman.y + dy[d];
+        if (getTile(ny, nx) !== WALL) {
+          pacman.dir = d;
+          pacman.x = nx;
+          pacman.y = ny;
+          var t = getTile(pacman.y, pacman.x);
+          if (t === DOT) {
+            setTile(pacman.y, pacman.x, EMPTY);
+            score += 10;
+            document.getElementById('score').textContent = score;
+          } else if (t === POWER) {
+            setTile(pacman.y, pacman.x, EMPTY);
+            score += 50;
+            powerTimer = 80;
+            document.getElementById('score').textContent = score;
+          }
+        }
+        pacman.mouth = (pacman.mouth + 0.15) % 0.4;
+      }
+
+      function moveGhost(g) {
+        var dx = [0, -1, 0, 1];
+        var dy = [-1, 0, 1, 0];
+        var choices = [];
+        for (var i = 0; i < 4; i++) {
+          var nx = g.x + dx[i];
+          var ny = g.y + dy[i];
+          if (getTile(ny, nx) !== WALL) choices.push(i);
+        }
+        if (choices.length) {
+          var d;
+          if (powerTimer > 0) {
+            d = choices[Math.floor(Math.random() * choices.length)];
+          } else {
+            var best = choices[0];
+            var bestDist = 1e9;
+            for (var j = 0; j < choices.length; j++) {
+              var nx = g.x + dx[choices[j]];
+              var ny = g.y + dy[choices[j]];
+              var dist = (nx - pacman.x) * (nx - pacman.x) + (ny - pacman.y) * (ny - pacman.y);
+              if (dist < bestDist) { bestDist = dist; best = choices[j]; }
+            }
+            d = best;
+          }
+          g.dir = d;
+          g.x += dx[d];
+          g.y += dy[d];
+        }
+      }
+
+      function checkCollision() {
+        for (var i = 0; i < ghosts.length; i++) {
+          var g = ghosts[i];
+          if (g.x === pacman.x && g.y === pacman.y) {
+            if (powerTimer > 0) {
+              ghosts[i] = { x: 9, y: 9, dir: 0, color: g.color };
+              score += 200;
+              document.getElementById('score').textContent = score;
+            } else {
+              lives--;
+              document.getElementById('lives').textContent = lives;
+              if (lives <= 0) {
+                gameOver = true;
+                document.getElementById('final-score').textContent = score;
+                document.getElementById('game-over').classList.add('show');
+              } else {
+                pacman.x = 9; pacman.y = 15; pacman.dir = 0; pacman.nextDir = 0;
+                for (var j = 0; j < ghosts.length; j++) {
+                  ghosts[j].x = [9,8,10,9][j]; ghosts[j].y = [9,9,9,8][j];
+                }
+              }
+            }
+            return;
+          }
+        }
+      }
+
+      function checkWin() {
+        for (var r = 0; r < ROWS; r++)
+          for (var c = 0; c < COLS; c++)
+            if (maze[r][c] === DOT || maze[r][c] === POWER) return;
+        gameWon = true;
+        document.getElementById('game-win').classList.add('show');
+      }
+
+      var tickCount = 0;
+      function gameLoop() {
+        if (gameOver || gameWon) return;
+        tickCount++;
+        if (tickCount % 2 === 0) movePacman();
+        if (tickCount % 2 === 0) {
+          for (var i = 0; i < ghosts.length; i++) moveGhost(ghosts[i]);
+        }
+        if (powerTimer > 0) powerTimer--;
+        checkCollision();
+        checkWin();
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        drawMaze();
+        drawPacman();
+        for (var i = 0; i < ghosts.length; i++) drawGhost(ghosts[i]);
+      }
+
+      setInterval(gameLoop, 100);
+
+      function setNextDir(d) {
+        pacman.nextDir = d;
+      }
+
+      document.getElementById('btn-up').addEventListener('click', function() { setNextDir(0); });
+      document.getElementById('btn-down').addEventListener('click', function() { setNextDir(2); });
+      document.getElementById('btn-left').addEventListener('click', function() { setNextDir(1); });
+      document.getElementById('btn-right').addEventListener('click', function() { setNextDir(3); });
+
+      document.addEventListener('keydown', function(e) {
+        if ([37,38,39,40].indexOf(e.keyCode) >= 0) e.preventDefault();
+        if (e.keyCode === 38) setNextDir(0);
+        if (e.keyCode === 40) setNextDir(2);
+        if (e.keyCode === 37) setNextDir(1);
+        if (e.keyCode === 39) setNextDir(3);
+      });
+
+      document.getElementById('restart-btn').addEventListener('click', restart);
+      document.getElementById('win-restart-btn').addEventListener('click', restart);
+
+      function restart() {
+        document.getElementById('game-over').classList.remove('show');
+        document.getElementById('game-win').classList.remove('show');
+        maze = [
+          [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+          [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,1],
+          [1,3,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,3,1],
+          [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+          [1,2,1,1,2,1,2,1,1,1,1,1,2,1,2,1,1,2,1],
+          [1,2,2,2,2,1,2,2,2,1,2,2,2,1,2,2,2,2,1],
+          [1,1,1,1,2,1,1,0,1,1,1,0,1,1,2,1,1,1,1],
+          [0,0,0,1,2,1,1,0,1,0,1,0,1,1,2,1,0,0,0],
+          [1,1,1,1,2,1,1,0,1,1,1,0,1,1,2,1,1,1,1],
+          [1,2,2,2,2,0,2,2,2,2,2,2,2,0,2,2,2,2,1],
+          [1,1,1,1,2,1,1,1,0,0,0,1,1,1,2,1,1,1,1],
+          [0,2,2,2,2,1,2,2,2,1,2,2,2,1,2,2,2,2,0],
+          [1,1,1,1,2,1,2,1,1,1,1,1,2,1,2,1,1,1,1],
+          [1,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,1],
+          [1,2,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1],
+          [1,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,1],
+          [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        ];
+        pacman = { x: 9, y: 15, dir: 0, nextDir: 0, mouth: 0 };
+        ghosts = [
+          { x: 9, y: 9, dir: 0, color: '#f00' },
+          { x: 8, y: 9, dir: 2, color: '#f8b' },
+          { x: 10, y: 9, dir: 0, color: '#0ff' },
+          { x: 9, y: 8, dir: 1, color: '#fa0' },
+        ];
+        score = 0; lives = 3; powerTimer = 0; gameOver = false; gameWon = false;
+        document.getElementById('score').textContent = '0';
+        document.getElementById('lives').textContent = '3';
+      }
+    })();
+  </script>
+</body>
+</html>

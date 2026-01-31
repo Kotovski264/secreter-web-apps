@@ -97,11 +97,11 @@
 
       function drawFace() {
         ctx.clearRect(0, 0, size, size);
-        var strokeColor = 'rgba(255,255,255,0.25)';
-        var fillColor = 'rgba(255,255,255,0.06)';
+        var strokeColor = 'rgb(50,110,220)';
+        var fillColor = 'rgba(50,110,220,0.15)';
         ctx.strokeStyle = strokeColor;
         ctx.fillStyle = fillColor;
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.arc(center, center, radius, 0, Math.PI * 2);
         ctx.fill();
@@ -113,7 +113,7 @@
           y1 = center + (radius - 4) * Math.sin(a);
           x2 = center + radius * Math.cos(a);
           y2 = center + radius * Math.sin(a);
-          ctx.strokeStyle = i % 5 === 0 ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.2)';
+          ctx.strokeStyle = i % 5 === 0 ? 'rgb(50,110,220)' : 'rgba(50,110,220,0.5)';
           ctx.lineWidth = i % 5 === 0 ? 2 : 1;
           ctx.beginPath();
           ctx.moveTo(x1, y1);
@@ -148,7 +148,7 @@
         drawFace();
         drawHand(hourAngle, radius * 0.45, 6, 'rgb(50,110,220)');
         drawHand(minAngle, radius * 0.7, 5, 'rgb(50,110,220)');
-        drawHand(secAngle, radius * 0.82, 3, 'rgb(50,110,220)');
+        drawHand(secAngle, radius * 0.82, 3, 'rgb(220,60,60)');
 
         var dig = document.getElementById('digital');
         dig.textContent = [

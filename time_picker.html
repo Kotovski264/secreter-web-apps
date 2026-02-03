@@ -236,10 +236,10 @@
       try {
         if (!tg || !tg.sendData) {
           console.error("❌ [TIME PICKER] ERROR: tg.sendData is not available!");
-          alert("Ошибка: Telegram WebApp API недоступен");
+          alert("Откройте выбор времени из Telegram (кнопка «Выбрать время» в чате с ботом). Тогда время передастся в бот.");
           return;
         }
-        
+        /* Передаём только строку времени HH:MM — бот ждёт именно её */
         console.log("✅ [TIME PICKER] Calling tg.sendData with:", timeStr);
         tg.sendData(timeStr);
         console.log("✅ [TIME PICKER] Data sent successfully");

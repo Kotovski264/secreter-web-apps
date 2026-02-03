@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
   <title>Выбор количества гостей</title>
+  <!-- Скрипт Web App API: при открытии из кнопки бота Telegram подставит свой API -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     /* Фиктивные значения для редактора — убирают предупреждения "Cannot resolve --tg-theme-*" */
@@ -225,10 +226,10 @@
       try {
         if (!tg || !tg.sendData) {
           console.error("❌ [GUESTS PICKER] ERROR: tg.sendData is not available!");
-          alert("Ошибка: Telegram WebApp API недоступен");
+          alert("Откройте выбор гостей из Telegram (кнопка «Выбрать количество» в чате с ботом). Тогда количество передастся в бот.");
           return;
         }
-        
+        /* Передаём только число дополнительных гостей строкой (бот ждёт именно её) */
         console.log("✅ [GUESTS PICKER] Calling tg.sendData with:", guestsStr);
         tg.sendData(guestsStr);
         console.log("✅ [GUESTS PICKER] Data sent successfully");

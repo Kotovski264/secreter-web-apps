@@ -231,7 +231,7 @@
         }
         /* Передаём только число дополнительных гостей строкой (бот ждёт именно её) */
         console.log("✅ [GUESTS PICKER] Calling tg.sendData with:", guestsStr);
-        tg.sendData(guestsStr);
+        tg.sendData(String(guestsStr));
         console.log("✅ [GUESTS PICKER] Data sent successfully");
         
         // Небольшая задержка перед закрытием для надежности

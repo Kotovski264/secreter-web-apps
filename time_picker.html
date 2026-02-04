@@ -227,32 +227,40 @@
       });
     });
 
-    document.getElementById('confirmBtn').addEventListener('click', () => {
+    document.getElementById('confirmBtn').addEventListener('click', async () => {
       const timeStr = String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0');
       console.log("✅ [TIME PICKER] Confirm button clicked. Selected time:", timeStr);
-      console.log("✅ [TIME PICKER] tg object:", tg);
-      console.log("✅ [TIME PICKER] tg.sendData type:", typeof tg.sendData);
-      
-      try {
-        if (!tg || !tg.sendData) {
-          console.error("❌ [TIME PICKER] ERROR: tg.sendData is not available!");
-          alert("Откройте выбор времени из Telegram (кнопка «Выбрать время» в чате с ботом). Тогда время передастся в бот.");
-          return;
-        }
-        /* Передаём только строку времени HH:MM — бот ждёт именно её */
-        console.log("✅ [TIME PICKER] Calling tg.sendData with:", timeStr);
-        tg.sendData(String(timeStr));
-        console.log("✅ [TIME PICKER] Data sent successfully");
-        
-        // Небольшая задержка перед закрытием для надежности
-        setTimeout(() => {
-          console.log("✅ [TIME PICKER] Closing WebApp");
-          if (tg.close) {
-            tg.close();
-          } else {
-            console.warn("⚠️ [TIME PICKER] tg.close is not available");
+      const apiBase = (new URLSearchParams(window.location.search).get('api') || window.location.origin).replace(/\/$/, '');
+      const initData = tg && tg.initData;
+      const closeApp = () => {
+        setTimeout(() => { if (tg && tg.close) tg.close(); }, 100);
+      };
+      if (initData) {
+        try {
+          const r = await fetch(apiBase + '/api/booking/draft', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ initData, step: 'time', value: String(timeStr) })
+          });
+          const data = await r.json().catch(() => ({}));
+          const ok = r.ok && data.success === true;
+          if (ok) {
+            console.log("✅ [TIME PICKER] Data sent to API (draft), bot will pick up in ~5s");
+            closeApp();
+            return;
           }
-        }, 100);
+        } catch (e) {
+          console.warn("API draft failed, fallback to sendData:", e);
+        }
+      }
+      try {
+        if (tg && tg.sendData) {
+          tg.sendData(String(timeStr));
+          console.log("✅ [TIME PICKER] Data sent via sendData");
+          closeApp();
+        } else {
+          alert("Откройте выбор времени из Telegram (кнопка «Выбрать время» в чате с ботом).");
+        }
       } catch (error) {
         console.error("❌ [TIME PICKER] ERROR sending data:", error);
         alert("Ошибка при отправке данных: " + error.message);

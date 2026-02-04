@@ -363,32 +363,40 @@
         renderCalendar();
     });
 
-    confirmBtn.addEventListener('click', () => {
+    confirmBtn.addEventListener('click', async () => {
         const dateStr = formatDate(selectedDate);
         console.log("✅ Confirm button clicked. Selected date:", dateStr);
-        console.log("✅ tg object:", tg);
-        console.log("✅ tg.sendData type:", typeof tg.sendData);
-        
-        try {
-            if (!tg || !tg.sendData) {
-                console.error("❌ ERROR: tg.sendData is not available!");
-                alert("Откройте календарь из Telegram (кнопка «Выбрать дату» в чате с ботом). Тогда дата передастся в бот.");
-                return;
-            }
-            /* Передаём только строку даты в формате YYYY-MM-DD — бот ждёт именно её */
-            console.log("✅ Calling tg.sendData with:", dateStr);
-            tg.sendData(String(dateStr));
-            console.log("✅ Data sent successfully");
-            
-            // Небольшая задержка перед закрытием для надежности
-            setTimeout(() => {
-                console.log("✅ Closing WebApp");
-                if (tg.close) {
-                    tg.close();
-                } else {
-                    console.warn("⚠️ tg.close is not available");
+        const apiBase = (new URLSearchParams(window.location.search).get('api') || window.location.origin).replace(/\/$/, '');
+        const initData = tg && tg.initData;
+        const closeApp = () => {
+            setTimeout(() => { if (tg && tg.close) tg.close(); }, 100);
+        };
+        if (initData) {
+            try {
+                const r = await fetch(apiBase + '/api/booking/draft', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ initData, step: 'date', value: String(dateStr) })
+                });
+                const data = await r.json().catch(() => ({}));
+                const ok = r.ok && data.success === true;
+                if (ok) {
+                    console.log("✅ Data sent to API (draft), bot will pick up in ~5s");
+                    closeApp();
+                    return;
                 }
-            }, 100);
+            } catch (e) {
+                console.warn("API draft failed, fallback to sendData:", e);
+            }
+        }
+        try {
+            if (tg && tg.sendData) {
+                tg.sendData(String(dateStr));
+                console.log("✅ Data sent via sendData");
+                closeApp();
+            } else {
+                alert("Откройте календарь из Telegram (кнопка «Выбрать дату» в чате с ботом).");
+            }
         } catch (error) {
             console.error("❌ ERROR sending data:", error);
             alert("Ошибка при отправке данных: " + error.message);

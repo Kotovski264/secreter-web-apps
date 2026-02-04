@@ -377,7 +377,7 @@
             }
             /* Передаём только строку даты в формате YYYY-MM-DD — бот ждёт именно её */
             console.log("✅ Calling tg.sendData with:", dateStr);
-            tg.sendData(dateStr);
+            tg.sendData(String(dateStr));
             console.log("✅ Data sent successfully");
             
             // Небольшая задержка перед закрытием для надежности

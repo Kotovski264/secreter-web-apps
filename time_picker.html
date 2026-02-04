@@ -241,7 +241,7 @@
         }
         /* Передаём только строку времени HH:MM — бот ждёт именно её */
         console.log("✅ [TIME PICKER] Calling tg.sendData with:", timeStr);
-        tg.sendData(timeStr);
+        tg.sendData(String(timeStr));
         console.log("✅ [TIME PICKER] Data sent successfully");
         
         // Небольшая задержка перед закрытием для надежности

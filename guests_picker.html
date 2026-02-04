@@ -217,32 +217,40 @@
       }
     });
 
-    document.getElementById('confirmBtn').addEventListener('click', () => {
+    document.getElementById('confirmBtn').addEventListener('click', async () => {
       const guestsStr = String(guests);
       console.log("✅ [GUESTS PICKER] Confirm button clicked. Selected guests:", guestsStr);
-      console.log("✅ [GUESTS PICKER] tg object:", tg);
-      console.log("✅ [GUESTS PICKER] tg.sendData type:", typeof tg.sendData);
-      
-      try {
-        if (!tg || !tg.sendData) {
-          console.error("❌ [GUESTS PICKER] ERROR: tg.sendData is not available!");
-          alert("Откройте выбор гостей из Telegram (кнопка «Выбрать количество» в чате с ботом). Тогда количество передастся в бот.");
-          return;
-        }
-        /* Передаём только число дополнительных гостей строкой (бот ждёт именно её) */
-        console.log("✅ [GUESTS PICKER] Calling tg.sendData with:", guestsStr);
-        tg.sendData(String(guestsStr));
-        console.log("✅ [GUESTS PICKER] Data sent successfully");
-        
-        // Небольшая задержка перед закрытием для надежности
-        setTimeout(() => {
-          console.log("✅ [GUESTS PICKER] Closing WebApp");
-          if (tg.close) {
-            tg.close();
-          } else {
-            console.warn("⚠️ [GUESTS PICKER] tg.close is not available");
+      const apiBase = (new URLSearchParams(window.location.search).get('api') || window.location.origin).replace(/\/$/, '');
+      const initData = tg && tg.initData;
+      const closeApp = () => {
+        setTimeout(() => { if (tg && tg.close) tg.close(); }, 100);
+      };
+      if (initData) {
+        try {
+          const r = await fetch(apiBase + '/api/booking/draft', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ initData, step: 'guests', value: String(guestsStr) })
+          });
+          const data = await r.json().catch(() => ({}));
+          const ok = r.ok && data.success === true;
+          if (ok) {
+            console.log("✅ [GUESTS PICKER] Data sent to API (draft), bot will pick up in ~5s");
+            closeApp();
+            return;
           }
-        }, 100);
+        } catch (e) {
+          console.warn("API draft failed, fallback to sendData:", e);
+        }
+      }
+      try {
+        if (tg && tg.sendData) {
+          tg.sendData(String(guestsStr));
+          console.log("✅ [GUESTS PICKER] Data sent via sendData");
+          closeApp();
+        } else {
+          alert("Откройте выбор гостей из Telegram (кнопка «Выбрать количество» в чате с ботом).");
+        }
       } catch (error) {
         console.error("❌ [GUESTS PICKER] ERROR sending data:", error);
         alert("Ошибка при отправке данных: " + error.message);
